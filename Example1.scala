@@ -1,0 +1,11 @@
+val businessFile = sc.textFile("/yelp/business/business.csv")
+val reviewFile = sc.textFile("/yelp/review/review.csv")
+val businessData = businessFile.map(line => line.split("\\^")).map(res => (res(0) , res(1). concat(", ".concat(res.last) ))).distinct.collectAsMap
+val businessRes = sc.broadcast(businessData)
+val reviewData = reviewFile.map(line => line.split("\\^")).map(res => (res(2),res(3).toDouble))
+val avgReviews = reviewData.groupByKey().map(res => {val avg = res._2.sum / res._2.size; (avg, res._1) })
+val topReviews = avgReviews.sortBy(_._2).sortByKey(false,1)
+val topReviewsFinal = topReviews.map(_.swap)
+val finalJoin = topReviewsFinal.map(rD => ("Business Id:".concat(rD._1),businessRes .value(rD._1).concat(" Avg Rating:".concat(rD._2.toString))))
+val result = finalJoin.take(10)
+val final_result = result.foreach(println)
